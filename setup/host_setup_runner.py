@@ -33,24 +33,40 @@ from acloud.internal.lib import utils
 from acloud.setup import base_task_runner
 from acloud.setup import setup_common
 
+import distro
 
 logger = logging.getLogger(__name__)
 
 # Packages "devscripts" and "equivs" are required for "mk-build-deps".
-_AVD_REQUIRED_PKGS = [
-    "devscripts", "equivs", "libvirt-clients", "libvirt-daemon-system"]
-_BASE_REQUIRED_PKGS = ["ssvnc", "lzop", "python3-tk"]
+_AVD_REQUIRED_PKGS_MAP = {
+    "debian": 
+        ["devscripts", "equivs", "libvirt-clients", "libvirt-daemon-system"],
+    "arch": [],
+}
+_BASE_REQUIRED_PKGS_MAP = {
+    "debian": 
+        ["ssvnc", "lzop", "python3-tk"],
+    "arch": [],
+}
 _CUTTLEFISH_COMMOM_PKG = "cuttlefish-common"
 _CF_COMMOM_FOLDER = "cf-common"
 _LIST_OF_MODULES = ["kvm_intel", "kvm"]
 _UPDATE_APT_GET_CMD = "sudo apt-get update"
-_INSTALL_CUTTLEFISH_COMMOM_CMD = [
-    "git clone https://github.com/google/android-cuttlefish.git {git_folder}",
-    "cd {git_folder}",
-    "yes | sudo mk-build-deps -i -r -B",
-    "dpkg-buildpackage -uc -us",
-    "sudo apt-get install -y -f ../cuttlefish-common_*_amd64.deb"]
-
+_INSTALL_CUTTLEFISH_COMMOM_CMD_MAP = {
+    "debian": [
+        "git clone https://github.com/google/android-cuttlefish.git {git_folder}",
+        "cd {git_folder}",
+        "yes | sudo mk-build-deps -i -r -B",
+        "dpkg-buildpackage -uc -us",
+        "sudo apt-get install -y -f ../cuttlefish-common_*_amd64.deb"
+    ],
+    "arch": [
+        "git clone https://github.com/USA-RedDragon/android-cuttlefish.git {git_folder}",
+        "cd {git_folder}/arch",
+        "makepkg -f",
+        "sudo pacman --noconfirm -U cuttlefish-common-*.pkg.tar.zst",
+    ]
+}
 
 class BasePkgInstaller(base_task_runner.BaseTaskRunner):
     """Subtask base runner class for installing packages."""
@@ -87,7 +103,8 @@ class BasePkgInstaller(base_task_runner.BaseTaskRunner):
                                       "enter to exit: " % cmd):
             sys.exit(constants.EXIT_BY_USER)
 
-        setup_common.CheckCmdOutput(_UPDATE_APT_GET_CMD, shell=True)
+        if 'debian' in distro.like():
+            setup_common.CheckCmdOutput(_UPDATE_APT_GET_CMD, shell=True)
         for pkg in self.PACKAGES:
             setup_common.InstallPackage(pkg)
 
@@ -102,7 +119,7 @@ class AvdPkgInstaller(BasePkgInstaller):
     WELCOME_MESSAGE = ("This step will walk you through the required packages "
                        "installation for running Android cuttlefish devices "
                        "on your host.")
-    PACKAGES = _AVD_REQUIRED_PKGS
+    PACKAGES = _AVD_REQUIRED_PKGS_MAP[distro.like()]
 
 
 class HostBasePkgInstaller(BasePkgInstaller):
@@ -111,7 +128,7 @@ class HostBasePkgInstaller(BasePkgInstaller):
     WELCOME_MESSAGE_TITLE = "Install base packages on the host"
     WELCOME_MESSAGE = ("This step will walk you through the base packages "
                        "installation for your host.")
-    PACKAGES = _BASE_REQUIRED_PKGS
+    PACKAGES = _BASE_REQUIRED_PKGS_MAP[distro.like()]
 
 
 class CuttlefishCommonPkgInstaller(base_task_runner.BaseTaskRunner):
@@ -141,7 +158,7 @@ class CuttlefishCommonPkgInstaller(base_task_runner.BaseTaskRunner):
         cf_common_path = os.path.join(tempfile.mkdtemp(), _CF_COMMOM_FOLDER)
         logger.debug("cuttlefish-common path: %s", cf_common_path)
         cmd = "\n".join(sub_cmd.format(git_folder=cf_common_path)
-                        for sub_cmd in _INSTALL_CUTTLEFISH_COMMOM_CMD)
+                        for sub_cmd in _INSTALL_CUTTLEFISH_COMMOM_CMD_MAP[distro.like()])
 
         if not utils.GetUserAnswerYes("\nStart to install cuttlefish-common :\n%s"
                                       "\nEnter 'y' to continue, otherwise N or "
