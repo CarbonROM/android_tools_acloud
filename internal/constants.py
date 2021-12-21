@@ -251,8 +251,17 @@ FETCH_CVD = "fetch_cvd"
 # For setup and cleanup
 # Packages "devscripts" and "equivs" are required for "mk-build-deps".
 # Packages from: https://android.googlesource.com/device/google/cuttlefish/
-AVD_REQUIRED_PKGS = [
-    "devscripts", "equivs", "libvirt-clients", "libvirt-daemon-system",
-    "config-package-dev", "golang"]
-BASE_REQUIRED_PKGS = ["ssvnc", "lzop", "python3-tk"]
+AVD_REQUIRED_PKGS_MAP = {
+    "debian": [
+        "devscripts", "equivs", "libvirt-clients", "libvirt-daemon-system",
+        "config-package-dev", "golang"
+    ],
+    "arch": []
+}
+BASE_REQUIRED_PKGS_MAP = {
+    "debian": [
+        "ssvnc", "lzop", "python3-tk"
+    ],
+    "arch": []
+}
 CUTTLEFISH_COMMOM_PKG = "cuttlefish-common"
