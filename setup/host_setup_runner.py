@@ -34,6 +34,7 @@ from acloud.setup import base_task_runner
 from acloud.setup import setup_common
 from acloud.setup import mkcert
 
+import distro
 
 logger = logging.getLogger(__name__)
 
@@ -41,12 +42,20 @@ _CF_COMMOM_FOLDER = "cf-common"
 
 _LIST_OF_MODULES = ["kvm_intel", "kvm"]
 _UPDATE_APT_GET_CMD = "sudo apt-get update"
-_INSTALL_CUTTLEFISH_COMMOM_CMD = [
-    "git clone https://github.com/google/android-cuttlefish.git {git_folder}",
-    "cd {git_folder}",
-    "debuild -i -us -uc -b",
-    "sudo dpkg -i ../cuttlefish-common_*_*64.deb || sudo apt-get install -f"]
-
+_INSTALL_CUTTLEFISH_COMMOM_CMD_MAP = {
+    "debian": [
+        "git clone https://github.com/google/android-cuttlefish.git {git_folder}",
+        "cd {git_folder}",
+        "debuild -i -us -uc -b",
+        "sudo dpkg -i ../cuttlefish-common_*_*64.deb || sudo apt-get install -f"
+    ],
+    "arch": [
+        "git clone https://github.com/USA-RedDragon/android-cuttlefish.git {git_folder}",
+        "cd {git_folder}/arch",
+        "makepkg -f",
+        "sudo pacman --noconfirm -U cuttlefish-common-*.pkg.tar.zst",
+    ]
+}
 
 class BasePkgInstaller(base_task_runner.BaseTaskRunner):
     """Subtask base runner class for installing packages."""
@@ -83,7 +92,8 @@ class BasePkgInstaller(base_task_runner.BaseTaskRunner):
                                       "enter to exit: " % cmd):
             sys.exit(constants.EXIT_BY_USER)
 
-        setup_common.CheckCmdOutput(_UPDATE_APT_GET_CMD, shell=True)
+        if 'debian' in distro.like():
+            setup_common.CheckCmdOutput(_UPDATE_APT_GET_CMD, shell=True)
         for pkg in self.PACKAGES:
             setup_common.InstallPackage(pkg)
 
@@ -98,7 +108,7 @@ class AvdPkgInstaller(BasePkgInstaller):
     WELCOME_MESSAGE = ("This step will walk you through the required packages "
                        "installation for running Android cuttlefish devices "
                        "on your host.")
-    PACKAGES = constants.AVD_REQUIRED_PKGS
+    PACKAGES = constants.AVD_REQUIRED_PKGS_MAP[distro.like()]
 
 
 class HostBasePkgInstaller(BasePkgInstaller):
@@ -107,7 +117,7 @@ class HostBasePkgInstaller(BasePkgInstaller):
     WELCOME_MESSAGE_TITLE = "Install base packages on the host"
     WELCOME_MESSAGE = ("This step will walk you through the base packages "
                        "installation for your host.")
-    PACKAGES = constants.BASE_REQUIRED_PKGS
+    PACKAGES = constants.BASE_REQUIRED_PKGS_MAP[distro.like()]
 
 
 class CuttlefishCommonPkgInstaller(base_task_runner.BaseTaskRunner):
@@ -137,7 +147,7 @@ class CuttlefishCommonPkgInstaller(base_task_runner.BaseTaskRunner):
         cf_common_path = os.path.join(tempfile.mkdtemp(), _CF_COMMOM_FOLDER)
         logger.debug("cuttlefish-common path: %s", cf_common_path)
         cmd = "\n".join(sub_cmd.format(git_folder=cf_common_path)
-                        for sub_cmd in _INSTALL_CUTTLEFISH_COMMOM_CMD)
+                        for sub_cmd in _INSTALL_CUTTLEFISH_COMMOM_CMD_MAP[distro.like()])
 
         if not utils.GetUserAnswerYes("\nStart to install cuttlefish-common :\n%s"
                                       "\nEnter 'y' to continue, otherwise N or "
