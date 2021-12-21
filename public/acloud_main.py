@@ -76,6 +76,8 @@ import sys
 import sysconfig
 import traceback
 
+import distro
+
 # TODO: Remove this once we switch over to embedded launcher.
 # Exit out if python version is < 2.7.13 due to b/120883119.
 if (sys.version_info.major == 2
@@ -88,7 +90,10 @@ if (sys.version_info.major == 2
     # pylint: disable=invalid-name
     os_type = platform.system().lower()
     if os_type == "linux":
-        print("  apt-get install python2.7")
+        if 'debian' in distro.like():
+            print("  apt-get install python2.7")
+        elif 'arch' in distro.like():
+            print("  pacman -S python2")
     elif os_type == "darwin":
         print("  brew install python@2 (and then follow instructions at "
               "https://docs.python-guide.org/starting/install/osx/)")

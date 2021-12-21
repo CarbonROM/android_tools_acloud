@@ -39,6 +39,7 @@ import uuid
 import webbrowser
 import zipfile
 
+import distro
 import six
 
 from acloud import errors
@@ -105,7 +106,7 @@ _CONFIRM_CONTINUE = ("In order to display the screen to the AVD, we'll need to "
 _EvaluatedResult = collections.namedtuple("EvaluatedResult",
                                           ["is_result_ok", "result_message"])
 # dict of supported system and their distributions.
-_SUPPORTED_SYSTEMS_AND_DISTS = {"Linux": ["Ubuntu", "ubuntu", "Debian", "debian"]}
+_SUPPORTED_SYSTEMS_AND_DISTS = {"Linux": ["ubuntu", "debian", "arch"]}
 _DEFAULT_TIMEOUT_ERR = "Function did not complete within %d secs."
 _SSVNC_VIEWER_PATTERN = "vnc://127.0.0.1:%(vnc_port)d"
 
@@ -1231,7 +1232,7 @@ def IsSupportedPlatform(print_warning=False):
     platform_supported = False
     if system in _SUPPORTED_SYSTEMS_AND_DISTS:
         for dist in _SUPPORTED_SYSTEMS_AND_DISTS[system]:
-            if dist in platform.version():
+            if dist in distro.like():
                 platform_supported = True
                 break
 
@@ -1239,7 +1240,7 @@ def IsSupportedPlatform(print_warning=False):
                 _SUPPORTED_SYSTEMS_AND_DISTS)
     platform_supported_msg = ("%s[%s] %s supported platform" %
                               (system,
-                               platform.version(),
+                               distro.like(),
                                "is a" if platform_supported else "is not a"))
     if print_warning and not platform_supported:
         PrintColorString(platform_supported_msg, TextColors.WARNING)
