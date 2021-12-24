@@ -1029,6 +1029,11 @@ def LaunchVncClient(port, avd_width=None, avd_height=None, no_prompts=False):
         return
 
     if IsSupportedPlatform() and not FindExecutable(_VNC_BIN):
+        distro_fam = distro.like()
+        if distro_fam == "arch":
+            PrintColorString("In order to display the screen from the AVD automatically, "
+                             "you'll need to install ssvnc-nojava from the AUR.")
+            return
         if no_prompts or GetUserAnswerYes(_CONFIRM_CONTINUE):
             try:
                 PrintColorString("Installing ssvnc vnc client... ", end="")
