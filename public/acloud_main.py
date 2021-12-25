@@ -90,9 +90,9 @@ if (sys.version_info.major == 2
     # pylint: disable=invalid-name
     os_type = platform.system().lower()
     if os_type == "linux":
-        if 'debian' in distro.like():
+        if distro.like() == 'debian':
             print("  apt-get install python2.7")
-        elif 'arch' in distro.like():
+        elif distro.like() == 'arch':
             print("  pacman -S python2")
     elif os_type == "darwin":
         print("  brew install python@2 (and then follow instructions at "

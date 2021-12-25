@@ -103,7 +103,7 @@ class BasePkgInstaller(base_task_runner.BaseTaskRunner):
                                       "enter to exit: " % cmd):
             sys.exit(constants.EXIT_BY_USER)
 
-        if 'debian' in distro.like():
+            if distro.like() == 'debian':
             setup_common.CheckCmdOutput(_UPDATE_APT_GET_CMD, shell=True)
         for pkg in self.PACKAGES:
             setup_common.InstallPackage(pkg)
