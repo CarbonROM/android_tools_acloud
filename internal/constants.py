@@ -256,11 +256,11 @@ AVD_REQUIRED_PKGS_MAP = {
         "devscripts", "equivs", "libvirt-clients", "libvirt-daemon-system",
         "config-package-dev", "golang"
     ],
-    "arch": []
+    "arch": ["libvirt", "dnsmasq"]
 }
 BASE_REQUIRED_PKGS_MAP = {
     "debian": [
         "ssvnc", "lzop", "python3-tk"
     ],
-    "arch": []
+    "arch": ["AUR:ssvnc-nojava", "python", "lzop", "xterm"]
 }
