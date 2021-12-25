@@ -1339,7 +1339,7 @@ def IsSupportedPlatform(print_warning=False):
     platform_supported = False
     if system in _SUPPORTED_SYSTEMS_AND_DISTS:
         for dist in _SUPPORTED_SYSTEMS_AND_DISTS[system]:
-            if dist in distro.like():
+            if distro.like() == dist:
                 platform_supported = True
                 break
 
