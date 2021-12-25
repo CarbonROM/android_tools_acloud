@@ -38,6 +38,7 @@ import distro
 
 logger = logging.getLogger(__name__)
 
+_CUTTLEFISH_COMMOM_PKG = "cuttlefish-common-git" if distro.like() == "arch" else "cuttlefish-common"
 _CF_COMMOM_FOLDER = "cf-common"
 
 _LIST_OF_MODULES = ["kvm_intel", "kvm"]
@@ -50,10 +51,9 @@ _INSTALL_CUTTLEFISH_COMMOM_CMD_MAP = {
         "sudo dpkg -i ../cuttlefish-common_*_*64.deb || sudo apt-get install -f"
     ],
     "arch": [
-        "git clone https://github.com/USA-RedDragon/android-cuttlefish.git {git_folder}",
-        "cd {git_folder}/arch",
-        "makepkg -f",
-        "sudo pacman --noconfirm -U cuttlefish-common-*.pkg.tar.zst",
+        "git clone https://aur.archlinux.org/cuttlefish-common-git.git {git_folder}",
+        "cd {git_folder}",
+        "makepkg --noconfirm -s -i -f",
     ]
 }
 
@@ -138,7 +138,7 @@ class CuttlefishCommonPkgInstaller(base_task_runner.BaseTaskRunner):
 
         # Any required package is not installed or not up-to-date will need to
         # run installation task.
-        if not setup_common.PackageInstalled(constants.CUTTLEFISH_COMMOM_PKG):
+        if not setup_common.PackageInstalled(_CUTTLEFISH_COMMOM_PKG):
             return True
         return False
 
