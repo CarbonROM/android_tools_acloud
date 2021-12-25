@@ -105,6 +105,8 @@ def PackageInstalled(pkg_name, compare_version=True):
         UnableToLocatePkgOnRepositoryError: Unable to locate package on repository.
     """
     try:
+        if distro.like() == "arch" and pkg_name.startswith("AUR:"):
+            pkg_name = pkg_name[len("AUR:"):]
         pkg_info = CheckCmdOutput(
             PKG_CHECK_CMD_MAP[distro.like()] % pkg_name,
             print_cmd=False,
@@ -114,36 +116,47 @@ def PackageInstalled(pkg_name, compare_version=True):
         logger.debug("Check package install status")
         logger.debug(pkg_info)
     except subprocess.CalledProcessError as error:
-        # Unable locate package name on repository.
-        raise errors.UnableToLocatePkgOnRepositoryError(
-            "Could not find package [" + pkg_name + "] on repository, :" +
-            str(error.output) + ", have you forgotten to run 'apt update'?")
+        if distro.like() == "arch":
+            # pacman -Q <pkgname> will simply fail if the package doesn't exist
+            return False
+        else:
+            # Debian-likes will show you the repo info, which is parsed below
+            # an error code indicates that the package isn't in the repos
+            raise errors.UnableToLocatePkgOnRepositoryError(
+                "Could not find package [" + pkg_name + "]: " + error.output.decode("utf-8") +
+                ("Have you forgotten to run 'apt update'?" if distro.like() == "debian" else ""))
 
     installed_ver = None
     candidate_ver = None
-    for line in pkg_info.splitlines():
-        match = _INSTALLED_RE.match(line)
-        if match:
-            installed_ver = match.group("installed_ver").strip()
-            continue
-        match = _CANDIDATE_RE.match(line)
-        if match:
-            candidate_ver = match.group("candidate_ver").strip()
-            continue
+    if distro.like() == "debian":
+        for line in pkg_info.splitlines():
+            match = _INSTALLED_RE.match(line)
+            if match:
+                installed_ver = match.group("installed_ver").strip()
+                continue
+            match = _CANDIDATE_RE.match(line)
+            if match:
+                candidate_ver = match.group("candidate_ver").strip()
+                continue
 
-    # package isn't installed
-    if installed_ver == "(none)":
-        logger.debug("Package is not installed, status is (none)")
-        return False
-    # couldn't find the package
-    if not (installed_ver and candidate_ver):
-        logger.debug("Version info not found [installed: %s ,candidate: %s]",
-                     installed_ver,
-                     candidate_ver)
-        return False
-    # TODO(148116924):Setup process should ask user to update package if the
-    # minimax required version is specified.
-    if compare_version and installed_ver != candidate_ver:
-        logger.warning("Package %s version at %s, expected %s",
-                       pkg_name, installed_ver, candidate_ver)
+        # package isn't installed
+        if installed_ver == "(none)":
+            logger.debug("Package is not installed, status is (none)")
+            return False
+        # couldn't find the package
+        if not (installed_ver and candidate_ver):
+            logger.debug("Version info not found [installed: %s ,candidate: %s]",
+                        installed_ver,
+                        candidate_ver)
+            return False
+        # TODO(148116924):Setup process should ask user to update package if the
+        # minimax required version is specified.
+        if compare_version and installed_ver != candidate_ver:
+            logger.warning("Package %s version at %s, expected %s",
+                        pkg_name, installed_ver, candidate_ver)
+    elif distro.like() == "arch":
+        if not pkg_info.startswith(pkg_name):
+            logger.debug("Package %s is not installed", pkg_name)
+            return False
+
     return True
