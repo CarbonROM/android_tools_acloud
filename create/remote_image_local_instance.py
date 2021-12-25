@@ -195,10 +195,11 @@ class RemoteImageLocalInstance(local_image_local_instance.LocalImageLocalInstanc
         Returns:
             local_image_local_instance.ArtifactPaths object.
         """
-        if not setup_common.PackageInstalled("cuttlefish-common"):
+        pkg_name = "cuttlefish-common-git" if distro.like() == "arch" else "cuttlefish-common"
+        if not setup_common.PackageInstalled(pkg_name):
             raise errors.NoCuttlefishCommonInstalled(
-                "Package [cuttlefish-common] is not installed!\n"
-                "Please run 'acloud setup --host' to install.")
+                "Package [%s] is not installed!\n" +
+                "Please run 'acloud setup --host' to install." % pkg_name)
 
         avd_spec.image_download_dir = ConfirmDownloadRemoteImageDir(
             avd_spec.image_download_dir)

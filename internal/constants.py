@@ -264,4 +264,3 @@ BASE_REQUIRED_PKGS_MAP = {
     ],
     "arch": []
 }
-CUTTLEFISH_COMMOM_PKG = "cuttlefish-common"
