@@ -82,11 +82,20 @@ class BasePkgInstaller(base_task_runner.BaseTaskRunner):
 
     def _Run(self):
         """Install specified packages."""
-        cmd = "\n".join(
-            [setup_common.PKG_INSTALL_CMD % pkg
-             for pkg in self.PACKAGES
-             if not setup_common.PackageInstalled(pkg)])
+        installable_pkgs = []
+        aur_pkgs = []
+        for pkg in self.PACKAGES:
+            if not setup_common.PackageInstalled(pkg):
+                if not pkg.startswith("AUR:"):
+                    installable_pkgs.append(pkg)
+                else:
+                    aur_pkgs.append(pkg)
 
+        cmd = "\n".join(
+            [setup_common.PKG_INSTALL_CMD_MAP[distro.like()] % pkg
+             for pkg in installable_pkgs])
+
+        if len(installable_pkgs) > 0:
         if not utils.GetUserAnswerYes("\nStart to install package(s):\n%s"
                                       "\nEnter 'y' to continue, otherwise N or "
                                       "enter to exit: " % cmd):
@@ -94,8 +103,15 @@ class BasePkgInstaller(base_task_runner.BaseTaskRunner):
 
             if distro.like() == 'debian':
             setup_common.CheckCmdOutput(_UPDATE_APT_GET_CMD, shell=True)
-        for pkg in self.PACKAGES:
+
+            for pkg in installable_pkgs:
             setup_common.InstallPackage(pkg)
+
+        if len(aur_pkgs) > 0:
+            for pkg in aur_pkgs:
+                # Tell user about AUR package
+                utils.PrintColorString("AUR package missing: %s" % pkg[len("AUR:"):], utils.TextColors.FAIL)
+            sys.exit(constants.EXIT_BY_ERROR)
 
         logger.info("All package(s) installed now.")
 
