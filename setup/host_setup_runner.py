@@ -48,7 +48,7 @@ _BASE_REQUIRED_PKGS_MAP = {
         ["ssvnc", "lzop", "python3-tk"],
     "arch": [],
 }
-_CUTTLEFISH_COMMOM_PKG = "cuttlefish-common"
+_CUTTLEFISH_COMMOM_PKG = "cuttlefish-common-git" if distro.like() == "arch" else "cuttlefish-common"
 _CF_COMMOM_FOLDER = "cf-common"
 _LIST_OF_MODULES = ["kvm_intel", "kvm"]
 _UPDATE_APT_GET_CMD = "sudo apt-get update"
@@ -61,10 +61,9 @@ _INSTALL_CUTTLEFISH_COMMOM_CMD_MAP = {
         "sudo apt-get install -y -f ../cuttlefish-common_*_amd64.deb"
     ],
     "arch": [
-        "git clone https://github.com/USA-RedDragon/android-cuttlefish.git {git_folder}",
-        "cd {git_folder}/arch",
-        "makepkg -f",
-        "sudo pacman --noconfirm -U cuttlefish-common-*.pkg.tar.zst",
+        "git clone https://aur.archlinux.org/cuttlefish-common-git.git {git_folder}",
+        "cd {git_folder}",
+        "makepkg --noconfirm -s -i -f",
     ]
 }
 
