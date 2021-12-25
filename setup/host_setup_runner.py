@@ -25,6 +25,7 @@ import getpass
 import logging
 import os
 import shutil
+import subprocess
 import sys
 import tempfile
 
@@ -50,7 +51,15 @@ _BASE_REQUIRED_PKGS_MAP = {
 }
 _CUTTLEFISH_COMMOM_PKG = "cuttlefish-common-git" if distro.like() == "arch" else "cuttlefish-common"
 _CF_COMMOM_FOLDER = "cf-common"
-_LIST_OF_MODULES = ["kvm_intel", "kvm"]
+
+_PROC_VENDOR_ID = subprocess.check_output("cat /proc/cpuinfo | grep vendor_id | awk '{print $3}'",
+                                    shell=True).strip().decode("utf-8")
+if _PROC_VENDOR_ID.startswith("AuthenticAMD"):
+    _PROC_KVM_MODULE = "kvm_amd"
+elif _PROC_VENDOR_ID.startswith("GenuineIntel"):
+    _PROC_KVM_MODULE = "kvm_intel"
+_LIST_OF_MODULES = [_PROC_KVM_MODULE, "kvm"]
+
 _UPDATE_APT_GET_CMD = "sudo apt-get update"
 _INSTALL_CUTTLEFISH_COMMOM_CMD_MAP = {
     "debian": [
@@ -106,16 +115,16 @@ class BasePkgInstaller(base_task_runner.BaseTaskRunner):
              for pkg in installable_pkgs])
 
         if len(installable_pkgs) > 0:
-        if not utils.GetUserAnswerYes("\nStart to install package(s):\n%s"
-                                      "\nEnter 'y' to continue, otherwise N or "
-                                      "enter to exit: " % cmd):
-            sys.exit(constants.EXIT_BY_USER)
+            if not utils.GetUserAnswerYes("\nStart to install package(s):\n%s"
+                                        "\nEnter 'y' to continue, otherwise N or "
+                                        "enter to exit: " % cmd):
+                sys.exit(constants.EXIT_BY_USER)
 
             if distro.like() == 'debian':
-            setup_common.CheckCmdOutput(_UPDATE_APT_GET_CMD, shell=True)
+                setup_common.CheckCmdOutput(_UPDATE_APT_GET_CMD, shell=True)
 
             for pkg in installable_pkgs:
-            setup_common.InstallPackage(pkg)
+                setup_common.InstallPackage(pkg)
 
         if len(aur_pkgs) > 0:
             for pkg in aur_pkgs:
@@ -233,10 +242,10 @@ class CuttlefishHostSetup(base_task_runner.BaseTaskRunner):
         # TODO: provide --uid args to let user use prefered username
         username = getpass.getuser()
         setup_cmds = [
-            "sudo rmmod kvm_intel",
+            "sudo rmmod " + _PROC_KVM_MODULE,
             "sudo rmmod kvm",
             "sudo modprobe kvm",
-            "sudo modprobe kvm_intel"]
+            "sudo modprobe " + _PROC_KVM_MODULE]
         for group in constants.LIST_CF_USER_GROUPS:
             setup_cmds.append("sudo usermod -aG %s % s" % (group, username))
 
