@@ -24,6 +24,8 @@ import platform
 import shutil
 import stat
 
+import distro
+
 from acloud.internal import constants
 from acloud.internal.lib import utils
 
@@ -39,7 +41,7 @@ _CERT_CRT_PATH = os.path.join(_CERT_DIR, "server.crt")
 _CA_EXT = "keyUsage=critical,keyCertSign"
 _CA_SUBJ="/OU=acloud/O=acloud development CA/CN=localhost"
 _CERT_SUBJ = "/OU=%s/O=acloud development CA" % platform.node()
-_TRUST_CA_PATH = os.path.join(constants.SSL_TRUST_CA_DIR,
+_TRUST_CA_PATH = os.path.join(constants.SSL_TRUST_CA_DIR_MAP[distro.like()],
                               f"{_CA_NAME}.crt")
 _CERT_CRT_EXT = ";".join(f"echo \"{ext}\"" for ext in [
     "keyUsage = critical, digitalSignature, keyEncipherment",
@@ -54,7 +56,6 @@ _CA_CMD = (f"openssl req -new -x509 -days 9999 -newkey rsa:2048 "
 
 # Trust the Root SSL Certificate.
 _TRUST_CA_COPY_CMD = f"sudo cp -p {_CA_CRT_PATH} {_TRUST_CA_PATH}"
-_UPDATE_TRUST_CA_CMD = "sudo update-ca-certificates"
 _TRUST_CHROME_CMD = (
     "certutil -d sql:$HOME/.pki/nssdb -A -t TC "
     f"-n \"{_CA_NAME}\" -i \"{_TRUST_CA_PATH}\"")
@@ -95,8 +96,8 @@ def Install():
     if not os.stat(_CA_CRT_PATH).st_mode & stat.S_IROTH:
         os.chmod(_CA_CRT_PATH, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH)
     utils.Popen(_TRUST_CA_COPY_CMD, shell=True)
-    utils.Popen(_UPDATE_TRUST_CA_CMD, shell=True)
     utils.Popen(_TRUST_CHROME_CMD, shell=True)
+    utils.Popen(constants.SSL_UPDATE_TRUST_CA_CMD_MAP[distro.like()], shell=True)
 
     return IsRootCAReady()
 
