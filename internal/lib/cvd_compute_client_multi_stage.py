@@ -42,6 +42,8 @@ import subprocess
 import tempfile
 import time
 
+import distro
+
 from acloud import errors
 from acloud.internal import constants
 from acloud.internal.lib import android_build_client
@@ -81,8 +83,8 @@ _LAUNCH_CVD_COMMAND = "launch_cvd_command"
 _CONFIG_RE = re.compile(r"^config=(?P<config>.+)")
 _TRUST_REMOTE_INSTANCE_COMMAND = (
     f"\"sudo cp -p ~/{constants.WEBRTC_CERTS_PATH}/{constants.SSL_CA_NAME}.pem "
-    f"{constants.SSL_TRUST_CA_DIR}/{constants.SSL_CA_NAME}.crt;"
-    "sudo update-ca-certificates;\"")
+    f"{constants.SSL_TRUST_CA_DIR_MAP[distro.like()]}/{constants.SSL_CA_NAME}.crt;"
+    f"{constants.SSL_UPDATE_TRUST_CA_CMD_MAP[distro.like()]};\"")
 # Remote host instance name
 _HOST_INSTANCE_NAME_FORMAT = (constants.INSTANCE_TYPE_HOST +
                               "-%(ip_addr)s-%(build_id)s-%(build_target)s")
